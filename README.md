@@ -9,6 +9,12 @@ AI Council is an interactive application that provides multiple perspectives on 
 - **The Empath**: Emotionally intelligent counselor focusing on emotional aspects and supportive guidance
 - **The Innovator**: Creative thinker generating unique perspectives and unconventional solutions
 
+### Conversation Features
+- **Multi-threaded Discussions**: Engage in separate conversations with each archetype
+- **Focused Dialogues**: Have a dedicated conversation with any single archetype while keeping others visible
+- **Context Awareness**: Each archetype maintains conversation history and context
+- **Independent Responses**: Reply to specific archetype's answers individually
+
 ### Technical Features
 - Built with Next.js and TypeScript
 - Anthropic's Claude AI integration
