@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NextResponse } from 'next/server';
 import { APIError } from '@/lib/errors';
+import { UserProfile } from '@/lib/types';
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({
@@ -11,6 +12,13 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: number;
+}
+
+interface ChatRequest {
+  systemPrompt: string;
+  userInput: string;
+  conversationHistory?: Message[];
+  userProfile?: UserProfile;
 }
 
 const MAX_RETRIES = 2;
@@ -38,7 +46,7 @@ export async function POST(req: Request) {
       throw new APIError('Claude API key not configured', 500, 'CLAUDE_API_ERROR');
     }
 
-    const { systemPrompt, userInput, conversationHistory = [] } = await req.json().catch(() => {
+    const { systemPrompt, userInput, conversationHistory = [], userProfile } = await req.json().catch(() => {
       throw new APIError('Invalid request body', 400, 'INVALID_INPUT');
     });
 
@@ -61,6 +69,23 @@ export async function POST(req: Request) {
       };
     });
 
+    // Enhance system prompt with user profile information if available
+    let enhancedSystemPrompt = systemPrompt;
+    if (userProfile) {
+      const profileContext = `
+User Profile Context:
+- Personality: ${userProfile.personality}
+- Goals: ${userProfile.goals.join(', ')}
+- Past Choices: ${userProfile.pastChoices.join(', ')}
+- Communication Style: ${userProfile.preferences.communicationStyle}
+- Decision Making: ${userProfile.preferences.decisionMaking}
+- Risk Tolerance: ${userProfile.preferences.riskTolerance}
+
+Please incorporate this context into your advice and responses, tailoring them to match the user's personality, goals, and preferences.
+`;
+      enhancedSystemPrompt = profileContext + '\n' + systemPrompt;
+    }
+
     // Create the message with context and retry logic
     const message = await retry(async () => {
       try {
@@ -68,7 +93,7 @@ export async function POST(req: Request) {
           model: 'claude-3-opus-20240229',
           max_tokens: 1000,
           temperature: 0.7,
-          system: systemPrompt,
+          system: enhancedSystemPrompt,
           messages: [
             ...formattedHistory,
             {

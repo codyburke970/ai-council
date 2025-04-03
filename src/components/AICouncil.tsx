@@ -2,11 +2,13 @@
 
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { getErrorMessage } from '@/lib/errors';
+import { UserProfile } from '@/lib/types';
+import { getUserProfile } from '@/lib/storage';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -60,6 +62,14 @@ export default function AICouncil() {
   const [replyText, setReplyText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [failedAttempts, setFailedAttempts] = useState<Record<number, FailedMessage>>({});
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    const profile = getUserProfile();
+    if (profile) {
+      setUserProfile(profile);
+    }
+  }, []);
 
   const askArchetype = async (archetypeIndex: number, userMessage: string, isRetry = false) => {
     if (!userMessage.trim()) {
@@ -122,7 +132,8 @@ export default function AICouncil() {
           body: JSON.stringify({
             systemPrompt: archetypes[archetypeIndex].systemPrompt,
             userInput: userMessage,
-            conversationHistory: archetypes[archetypeIndex].conversation.messages
+            conversationHistory: archetypes[archetypeIndex].conversation.messages,
+            userProfile
           }),
           signal: controller.signal
         });
